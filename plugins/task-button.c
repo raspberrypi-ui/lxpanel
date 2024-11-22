@@ -1296,7 +1296,7 @@ static gboolean task_button_button_press_event(GtkWidget *widget, GdkEventButton
         /* attach menu to the widget and show it */
         gtk_menu_attach_to_widget(GTK_MENU(menu), widget, NULL);
 #if GTK_CHECK_VERSION(3, 0, 0)
-        gtk_menu_popup_at_widget (GTK_MENU(menu), widget, GDK_GRAVITY_NORTH_WEST, GDK_GRAVITY_NORTH_WEST, (GdkEvent *) event);
+        gtk_menu_popup_at_widget (GTK_MENU(menu), widget, GDK_GRAVITY_SOUTH_WEST, GDK_GRAVITY_NORTH_WEST, (GdkEvent *) event);
 #else
         gtk_menu_popup(GTK_MENU(menu), NULL, NULL, taskbar_popup_set_position,
                        tb, event->button, event->time);
@@ -1382,7 +1382,7 @@ static gboolean task_button_button_release_event(GtkWidget *widget, GdkEventButt
             gtk_widget_show_all(GTK_WIDGET(tb->menu_list));
             gtk_menu_attach_to_widget(tb->menu_list, widget, NULL);
 #if GTK_CHECK_VERSION(3, 0, 0)
-            gtk_menu_popup_at_widget (tb->menu_list, widget, GDK_GRAVITY_NORTH_WEST, GDK_GRAVITY_NORTH_WEST, (GdkEvent *) event);
+            gtk_menu_popup_at_widget (tb->menu_list, widget, GDK_GRAVITY_SOUTH_WEST, GDK_GRAVITY_NORTH_WEST, (GdkEvent *) event);
 #else
             gtk_menu_popup(tb->menu_list, NULL, NULL, taskbar_popup_set_position,
                            tb, event->button, event->time);

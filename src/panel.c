@@ -510,7 +510,7 @@ static gboolean lxpanel_button_press(GtkWidget *widget, GdkEventButton *event)
     {
         GtkMenu* popup = (GtkMenu*) lxpanel_get_plugin_menu(panel, NULL, FALSE);
 #if GTK_CHECK_VERSION(3, 0, 0)
-        gtk_menu_popup_at_widget (popup, widget, GDK_GRAVITY_NORTH_WEST, GDK_GRAVITY_NORTH_WEST, (GdkEvent *) event);
+        gtk_menu_popup_at_widget (popup, widget, GDK_GRAVITY_SOUTH_WEST, GDK_GRAVITY_NORTH_WEST, (GdkEvent *) event);
 #else
         gtk_menu_popup(popup, NULL, NULL, NULL, NULL, event->button, event->time);
 #endif
