@@ -413,6 +413,14 @@ typedef struct {
 extern void graph_init (PluginGraph *graph);
 extern void graph_reload (PluginGraph *graph, int icon_size, GdkRGBA background, GdkRGBA foreground, GdkRGBA throttle1, GdkRGBA throttle2);
 extern void graph_new_point (PluginGraph *graph, float value, int state, char *label);
+extern void graph_free (PluginGraph *graph);
+
+#define wrap_new_menu_item(plugin,text,maxlen,icon) lxpanel_plugin_new_menu_item(plugin->panel,text,maxlen,icon)
+#define wrap_set_menu_icon(plugin,image,icon) lxpanel_plugin_set_menu_icon(plugin->panel,image,icon)
+#define wrap_set_taskbar_icon(plugin,image,icon) lxpanel_plugin_set_taskbar_icon(plugin->panel,image,icon)
+#define wrap_show_menu(plugin,menu) gtk_menu_popup_at_widget(GTK_MENU(menu),plugin,GDK_GRAVITY_SOUTH_WEST,GDK_GRAVITY_NORTH_WEST,NULL)
+#define wrap_icon_size(plugin) panel_get_safe_icon_size(plugin->panel)
+#define wrap_is_at_bottom(plugin) panel_is_at_bottom(plugin->panel)
 
 G_END_DECLS
 

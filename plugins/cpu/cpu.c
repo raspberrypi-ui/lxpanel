@@ -65,119 +65,22 @@ typedef struct {
     GdkColor foreground_color;			/* Foreground color for drawing area */
     GdkColor background_color;			/* Background color for drawing area */
 #endif
-    GtkWidget * da;				/* Drawing area */
-    cairo_surface_t * pixmap;				/* Pixmap to be drawn on drawing area */
-
+    PluginGraph graph;
     guint timer;				/* Timer for periodic update */
-    CPUSample * stats_cpu;			/* Ring buffer of CPU utilization values */
-    unsigned int ring_cursor;			/* Cursor for ring buffer */
-    guint pixmap_width;				/* Width of drawing area pixmap; also size of ring buffer; does not include border size */
-    guint pixmap_height;			/* Height of drawing area pixmap; does not include border size */
     struct cpu_stat previous_cpu_stat;		/* Previous value of cpu_stat */
     gboolean show_percentage;				/* Display usage as a percentage */
     config_setting_t *settings;
 } CPUPlugin;
 
-static void redraw_pixmap(CPUPlugin * c);
 static gboolean cpu_update(CPUPlugin * c);
-#if !GTK_CHECK_VERSION(3, 0, 0)
-static gboolean expose_event(GtkWidget * widget, GdkEventExpose * event, CPUPlugin * c);
-#else
-static gboolean draw(GtkWidget * widget, cairo_t * cr, CPUPlugin * c);
-#endif
 
 static void cpu_destructor(gpointer user_data);
-
-/* Redraw after timer callback or resize. */
-static void redraw_pixmap(CPUPlugin * c)
-{
-#if !GTK_CHECK_VERSION(3, 0, 0)
-    GdkColor col;
-#endif
-    cairo_t * cr = cairo_create(c->pixmap);
-#if !GTK_CHECK_VERSION(3, 0, 0)
-    GtkStyle * style = gtk_widget_get_style(c->da);
-#endif
-    cairo_set_line_width (cr, 1.0);
-    /* Erase pixmap. */
-    cairo_rectangle(cr, 0, 0, c->pixmap_width, c->pixmap_height);
-#if GTK_CHECK_VERSION(3, 0, 0)
-    cairo_set_source_rgba(cr, c->background_color.blue,  c->background_color.green, c->background_color.red, c->background_color.alpha);
-#else
-    col.red = c->background_color.blue;
-    col.green = c->background_color.green;
-    col.blue = c->background_color.red;
-    gdk_cairo_set_source_color(cr, &col);
-#endif
-    cairo_fill(cr);
-
-    /* Recompute pixmap. */
-    unsigned int i;
-    unsigned int drawing_cursor = c->ring_cursor;
-#if GTK_CHECK_VERSION(3, 0, 0)
-    cairo_set_source_rgba(cr, c->foreground_color.blue,  c->foreground_color.green, c->foreground_color.red, c->foreground_color.alpha);
-#else
-    col.red = c->foreground_color.blue;
-    col.green = c->foreground_color.green;
-    col.blue = c->foreground_color.red;
-    gdk_cairo_set_source_color(cr, &col);
-#endif
-    for (i = 0; i < c->pixmap_width; i++)
-    {
-        /* Draw one bar of the CPU usage graph. */
-        if (c->stats_cpu[drawing_cursor] != 0.0)
-        {
-            cairo_move_to(cr, i + 0.5, c->pixmap_height);
-            cairo_line_to(cr, i + 0.5, c->pixmap_height - c->stats_cpu[drawing_cursor] * c->pixmap_height);
-            cairo_stroke(cr);
-        }
-
-        /* Increment and wrap drawing cursor. */
-        drawing_cursor += 1;
-        if (drawing_cursor >= c->pixmap_width)
-            drawing_cursor = 0;
-    }
-
-    /* draw a border in black */
-    cairo_set_source_rgb(cr, 0, 0, 0);
-    cairo_set_line_width(cr, 1);
-    cairo_move_to(cr, 0, 0);
-    cairo_line_to(cr, 0, c->pixmap_height);
-    cairo_line_to(cr, c->pixmap_width, c->pixmap_height);
-    cairo_line_to(cr, c->pixmap_width, 0);
-    cairo_line_to(cr, 0, 0);
-    cairo_stroke(cr);
-
-    if (c->show_percentage)
-    {
-        int fontsize = 12;
-        if (c->pixmap_width > 50) fontsize = c->pixmap_height / 3;
-        char buffer[10];
-        int val = 100 * c->stats_cpu[c->ring_cursor ? c->ring_cursor - 1 : c->pixmap_width - 1];
-        sprintf (buffer, "%3d %%", val);
-        cairo_select_font_face (cr, "monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-        cairo_set_font_size (cr, fontsize);
-        cairo_set_source_rgb (cr, 0, 0, 0);
-        cairo_move_to (cr, (c->pixmap_width >> 1) - ((fontsize * 5) / 3), ((c->pixmap_height + fontsize) >> 1) - 1);
-        cairo_show_text (cr, buffer);
-    }
-
-    /* check_cairo_status(cr); */
-    cairo_destroy(cr);
-
-    /* Redraw pixmap. */
-    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data (cairo_image_surface_get_data (c->pixmap), GDK_COLORSPACE_RGB, TRUE, 8, c->pixmap_width, c->pixmap_height, c->pixmap_width *4, NULL, NULL);
-    gtk_image_set_from_pixbuf (GTK_IMAGE (c->da), pixbuf);
-    g_object_unref (pixbuf);
-}
 
 /* Periodic timer callback. */
 static gboolean cpu_update(CPUPlugin * c)
 {
     if (g_source_is_destroyed(g_main_current_source()))
         return FALSE;
-    if ((c->stats_cpu != NULL) && (c->pixmap != NULL))
-    {
         /* Open statistics file and scan out CPU usage. */
         struct cpu_stat cpu;
         char buffer[256];
@@ -202,15 +105,12 @@ static gboolean cpu_update(CPUPlugin * c)
             /* Compute user+nice+system as a fraction of total.
              * Introduce this sample to ring buffer, increment and wrap ring buffer cursor. */
             float cpu_uns = cpu_delta.u + cpu_delta.n + cpu_delta.s;
-            c->stats_cpu[c->ring_cursor] = cpu_uns / (cpu_uns + cpu_delta.i);
-            c->ring_cursor += 1;
-            if (c->ring_cursor >= c->pixmap_width)
-                c->ring_cursor = 0;
+            cpu_uns /= (cpu_uns + cpu_delta.i);
+            if (c->show_percentage) sprintf (buffer, "C:%3.0f", cpu_uns * 100.0);
+            else buffer[0] = 0;
 
-            /* Redraw with the new sample. */
-            redraw_pixmap(c);
+            graph_new_point (&(c->graph), cpu_uns, 0, buffer);
         }
-    }
     return TRUE;
 }
 
@@ -219,91 +119,8 @@ static void cpu_configuration_changed (LXPanel *panel, GtkWidget *p)
 {
     CPUPlugin *c = lxpanel_plugin_get_data (p);
 
-    /* Allocate pixmap and statistics buffer without border pixels. */
-    guint new_pixmap_height = panel_get_icon_size (panel) - (BORDER_SIZE << 1);
-    guint new_pixmap_width = (new_pixmap_height * 3) >> 1;
-    if (new_pixmap_width < 50) new_pixmap_width = 50;
-    if ((new_pixmap_width > 0) && (new_pixmap_height > 0))
-    {
-        /* If statistics buffer does not exist or it changed size, reallocate and preserve existing data. */
-        if ((c->stats_cpu == NULL) || (new_pixmap_width != c->pixmap_width))
-        {
-            CPUSample * new_stats_cpu = g_new0(typeof(*c->stats_cpu), new_pixmap_width);
-            if (c->stats_cpu != NULL)
-            {
-                if (new_pixmap_width > c->pixmap_width)
-                {
-                    /* New allocation is larger.
-                     * Introduce new "oldest" samples of zero following the cursor. */
-                    memcpy(&new_stats_cpu[0],
-                        &c->stats_cpu[0], c->ring_cursor * sizeof(CPUSample));
-                    memcpy(&new_stats_cpu[new_pixmap_width - c->pixmap_width + c->ring_cursor],
-                        &c->stats_cpu[c->ring_cursor], (c->pixmap_width - c->ring_cursor) * sizeof(CPUSample));
-                }
-                else if (c->ring_cursor <= new_pixmap_width)
-                {
-                    /* New allocation is smaller, but still larger than the ring buffer cursor.
-                     * Discard the oldest samples following the cursor. */
-                    memcpy(&new_stats_cpu[0],
-                        &c->stats_cpu[0], c->ring_cursor * sizeof(CPUSample));
-                    memcpy(&new_stats_cpu[c->ring_cursor],
-                        &c->stats_cpu[c->pixmap_width - new_pixmap_width + c->ring_cursor], (new_pixmap_width - c->ring_cursor) * sizeof(CPUSample));
-                }
-                else
-                {
-                    /* New allocation is smaller, and also smaller than the ring buffer cursor.
-                     * Discard all oldest samples following the ring buffer cursor and additional samples at the beginning of the buffer. */
-                    memcpy(&new_stats_cpu[0],
-                        &c->stats_cpu[c->ring_cursor - new_pixmap_width], new_pixmap_width * sizeof(CPUSample));
-                    c->ring_cursor = 0;
-                }
-                g_free(c->stats_cpu);
-            }
-            c->stats_cpu = new_stats_cpu;
-        }
-
-        /* Allocate or reallocate pixmap. */
-        c->pixmap_width = new_pixmap_width;
-        c->pixmap_height = new_pixmap_height;
-        if (c->pixmap)
-            cairo_surface_destroy(c->pixmap);
-        c->pixmap = cairo_image_surface_create(CAIRO_FORMAT_RGB24, c->pixmap_width, c->pixmap_height);
-        /* check_cairo_surface_status(&c->pixmap); */
-
-        /* Redraw pixmap at the new size. */
-        redraw_pixmap(c);
-    }
-}
-
-/* Handler for expose_event on drawing area. */
-#if !GTK_CHECK_VERSION(3, 0, 0)
-static gboolean expose_event(GtkWidget * widget, GdkEventExpose * event, CPUPlugin * c)
-#else
-static gboolean draw(GtkWidget * widget, cairo_t * cr, CPUPlugin * c)
-#endif
-{
-    /* Draw the requested part of the pixmap onto the drawing area.
-     * Translate it in both x and y by the border size. */
-    if (c->pixmap != NULL)
-    {
-#if !GTK_CHECK_VERSION(3, 0, 0)
-        cairo_t * cr = gdk_cairo_create(gtk_widget_get_window(widget));
-        GtkStyle * style = gtk_widget_get_style(c->da);
-        gdk_cairo_region(cr, event->region);
-        cairo_clip(cr);
-        gdk_cairo_set_source_color(cr, &c->foreground_color);
-#else
-        cairo_set_source_rgb(cr, 0, 0, 0); // FIXME: use black color from style
-#endif
-        cairo_set_source_surface(cr, c->pixmap,
-              BORDER_SIZE, BORDER_SIZE);
-        cairo_paint(cr);
-        /* check_cairo_status(cr); */
-#if !GTK_CHECK_VERSION(3, 0, 0)
-        cairo_destroy(cr);
-#endif
-    }
-    return FALSE;
+    GdkRGBA none = {0, 0, 0, 0};
+    graph_reload (&(c->graph), panel_get_safe_icon_size (panel), c->background_color, c->foreground_color, none, none);
 }
 
 /* Plugin constructor. */
@@ -351,20 +168,13 @@ static GtkWidget *cpu_constructor(LXPanel *panel, config_setting_t *settings)
     lxpanel_plugin_set_data(p, c, cpu_destructor);
 
     /* Allocate drawing area as a child of top level widget. */
-    c->da = gtk_image_new();
-    gtk_widget_add_events(c->da, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
+    gtk_widget_add_events(c->graph.da, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
                                  GDK_BUTTON_MOTION_MASK);
-    gtk_container_add(GTK_CONTAINER(p), c->da);
-
-    /* Connect signals. */
-#if !GTK_CHECK_VERSION(3, 0, 0)
-    g_signal_connect(G_OBJECT(c->da), "expose-event", G_CALLBACK(expose_event), (gpointer) c);
-#else
-    g_signal_connect(G_OBJECT(c->da), "draw", G_CALLBACK(draw), (gpointer) c);
-#endif
+    graph_init (&(c->graph));
+    gtk_container_add (GTK_CONTAINER (p), c->graph.da);
 
     /* Show the widget.  Connect a timer to refresh the statistics. */
-    gtk_widget_show(c->da);
+    gtk_widget_show(c->graph.da);
     cpu_configuration_changed (panel,p);
     c->timer = g_timeout_add(1500, (GSourceFunc) cpu_update, (gpointer) c);
     return p;
@@ -379,8 +189,7 @@ static void cpu_destructor(gpointer user_data)
     g_source_remove(c->timer);
 
     /* Deallocate memory. */
-    cairo_surface_destroy(c->pixmap);
-    g_free(c->stats_cpu);
+    graph_free (&(c->graph));
     g_free(c);
 }
 
