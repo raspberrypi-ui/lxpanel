@@ -867,3 +867,42 @@ void graph_free (PluginGraph *graph)
     if (graph->samp_states) g_free (graph->samp_states);
     gtk_widget_destroy (graph->da);
 }
+
+/*----------------------------------------------------------------------------*/
+/* Click-away pop-up */
+/*----------------------------------------------------------------------------*/
+
+static gboolean popup_mapped (GtkWidget *widget, GdkEvent *, gpointer)
+{
+    gdk_seat_grab (gdk_display_get_default_seat (gdk_display_get_default ()), gtk_widget_get_window (widget), GDK_SEAT_CAPABILITY_ALL_POINTING, TRUE, NULL, NULL, NULL, NULL);
+    return FALSE;
+}
+
+static gboolean popup_button_press (GtkWidget *widget, GdkEventButton *event, gpointer)
+{
+    int x, y;
+    gtk_window_get_size (GTK_WINDOW (widget), &x, &y);
+    if (event->x < 0 || event->y < 0 || event->x > x || event->y > y)
+    {
+        if (widget) gtk_widget_destroy (widget);
+        gdk_seat_ungrab (gdk_display_get_default_seat (gdk_display_get_default ()));
+    }
+    return FALSE;
+}
+
+void popup_at_button (LXPanel *panel, GtkWidget *window, GtkWidget *button, gpointer plugin)
+{
+    gint x, y;
+    gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
+    gtk_window_set_type_hint (GTK_WINDOW (window), GDK_WINDOW_TYPE_HINT_POPUP_MENU);
+    gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
+    gtk_window_set_position (GTK_WINDOW (window), GTK_WIN_POS_MOUSE);
+    gtk_widget_show_all (window);
+    gtk_widget_hide (window);
+    lxpanel_plugin_popup_set_position_helper (panel, button, window, &x, &y);
+    gtk_widget_show_all (window);
+    gtk_window_present (GTK_WINDOW (window));
+    gdk_window_move (gtk_widget_get_window (window), x, y);
+    g_signal_connect (G_OBJECT (window), "map-event", G_CALLBACK (popup_mapped), plugin);
+    g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (popup_button_press), plugin);
+}

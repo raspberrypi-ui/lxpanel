@@ -415,12 +415,15 @@ extern void graph_reload (PluginGraph *graph, int icon_size, GdkRGBA background,
 extern void graph_new_point (PluginGraph *graph, float value, int state, char *label);
 extern void graph_free (PluginGraph *graph);
 
+extern void popup_at_button (LXPanel *panel, GtkWidget *window, GtkWidget *button, gpointer plugin);
+
 #define wrap_new_menu_item(plugin,text,maxlen,icon) lxpanel_plugin_new_menu_item(plugin->panel,text,maxlen,icon)
 #define wrap_set_menu_icon(plugin,image,icon) lxpanel_plugin_set_menu_icon(plugin->panel,image,icon)
 #define wrap_set_taskbar_icon(plugin,image,icon) lxpanel_plugin_set_taskbar_icon(plugin->panel,image,icon)
 #define wrap_show_menu(plugin,menu) gtk_menu_popup_at_widget(GTK_MENU(menu),plugin,GDK_GRAVITY_SOUTH_WEST,GDK_GRAVITY_NORTH_WEST,NULL)
 #define wrap_icon_size(plugin) panel_get_safe_icon_size(plugin->panel)
 #define wrap_is_at_bottom(plugin) panel_is_at_bottom(plugin->panel)
+#define wrap_popup_at_button(plugin,window,button) popup_at_button(plugin->panel,window,button,plugin)
 
 G_END_DECLS
 
