@@ -420,6 +420,7 @@ extern void popup_at_button (LXPanel *panel, GtkWidget *window, GtkWidget *butto
 #define wrap_new_menu_item(plugin,text,maxlen,icon) lxpanel_plugin_new_menu_item(plugin->panel,text,maxlen,icon)
 #define wrap_set_menu_icon(plugin,image,icon) lxpanel_plugin_set_menu_icon(plugin->panel,image,icon)
 #define wrap_set_taskbar_icon(plugin,image,icon) lxpanel_plugin_set_taskbar_icon(plugin->panel,image,icon)
+#define wrap_get_menu_label(item) lxpanel_plugin_get_menu_label(item)
 #define wrap_show_menu(plugin,menu) gtk_menu_popup_at_widget(GTK_MENU(menu),plugin,GDK_GRAVITY_SOUTH_WEST,GDK_GRAVITY_NORTH_WEST,NULL)
 #define wrap_icon_size(plugin) panel_get_safe_icon_size(plugin->panel)
 #define wrap_is_at_bottom(plugin) panel_is_at_bottom(plugin->panel)
