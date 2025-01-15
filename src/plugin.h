@@ -425,6 +425,7 @@ extern void popup_at_button (LXPanel *panel, GtkWidget *window, GtkWidget *butto
 #define wrap_icon_size(plugin) panel_get_safe_icon_size(plugin->panel)
 #define wrap_is_at_bottom(plugin) panel_is_at_bottom(plugin->panel)
 #define wrap_popup_at_button(plugin,window,button) popup_at_button(plugin->panel,window,button,plugin)
+#define CHECK_LONGPRESS
 
 G_END_DECLS
 
