@@ -192,7 +192,6 @@ dnl Here are plugin listing.
 plugin_netstatus=
 plugin_netstat=
 plugin_volume=
-plugin_cpu=
 plugin_deskno=
 plugin_batt=
 plugin_xkb=
@@ -209,7 +208,7 @@ AC_ARG_WITH(plugins,
 [                         'all' builds all plugins (default), 'none' builds none ]
 [                         plugins prefixed with '-' are not built]
 [                         Possible plugins are: ]
-[                         netstatus, netstat, volume, cpu, deskno, batt, kbled,]
+[                         netstatus, netstat, volume, deskno, batt, kbled,]
 [                         xkb, thermal, cpufreq, monitors, indicator, weather]
 , plugins="$withval",[plugins="all"])
 
@@ -297,7 +296,6 @@ PLUGINS_LIST="\
     $plugin_netstatus \
     $plugin_netstat \
     $plugin_volume \
-    $plugin_cpu \
     $plugin_deskno \
     $plugin_batt \
     $plugin_kbled \
@@ -434,9 +432,6 @@ echo Building dynamic plugins:
     fi
     if test x"$plugin_volume" != x; then
         AC_MSG_RESULT([    volume - Display and adjust volume of sound card])
-    fi
-    if test x"$plugin_cpu" != x; then
-        AC_MSG_RESULT([    cpu - Display CPU loading])
     fi
     if test x"$plugin_deskno" != x; then
         AC_MSG_RESULT([    deskno - Display desktop number])
