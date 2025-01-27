@@ -193,7 +193,6 @@ plugin_netstatus=
 plugin_netstat=
 plugin_volume=
 plugin_deskno=
-plugin_batt=
 plugin_xkb=
 plugin_kbled=
 plugin_thermal=
@@ -208,7 +207,7 @@ AC_ARG_WITH(plugins,
 [                         'all' builds all plugins (default), 'none' builds none ]
 [                         plugins prefixed with '-' are not built]
 [                         Possible plugins are: ]
-[                         netstatus, netstat, volume, deskno, batt, kbled,]
+[                         netstatus, netstat, volume, deskno, kbled,]
 [                         xkb, thermal, cpufreq, monitors, indicator, weather]
 , plugins="$withval",[plugins="all"])
 
@@ -297,7 +296,6 @@ PLUGINS_LIST="\
     $plugin_netstat \
     $plugin_volume \
     $plugin_deskno \
-    $plugin_batt \
     $plugin_kbled \
     $plugin_xkb \
     $plugin_thermal \
@@ -435,9 +433,6 @@ echo Building dynamic plugins:
     fi
     if test x"$plugin_deskno" != x; then
         AC_MSG_RESULT([    deskno - Display desktop number])
-    fi
-    if test x"$plugin_batt" != x; then
-        AC_MSG_RESULT([    batt - Monitor battery status])
     fi
     if test x"$plugin_kbled" != x; then
         AC_MSG_RESULT([    kbled - Indicator for CapsLock, NumLock, and ScrLock])

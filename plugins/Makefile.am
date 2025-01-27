@@ -59,7 +59,6 @@ endif
 pkglib_LTLIBRARIES = $(DYNAMIC_PLUGINS)
 
 EXTRA_LTLIBRARIES = \
-	batt.la \
 	cpufreq.la \
 	deskno.la \
 	indicator.la \
@@ -73,12 +72,6 @@ EXTRA_LTLIBRARIES = \
 	xkb.la
 
 pkglibdir = $(libdir)/lxpanel/plugins
-
-# batt
-batt_la_SOURCES = \
-	batt/batt.c \
-	batt/batt_sys.c
-batt_la_CFLAGS = -I$(srcdir)/batt
 
 # cpufreq
 cpufreq_la_SOURCES = cpufreq/cpufreq.c
@@ -297,7 +290,6 @@ flags_DATA= \
 	xkb/flags/za.png
 
 EXTRA_DIST = \
-	batt/batt_sys.h \
 	netstat/netstat.h \
 	netstat/nsconfig.h \
 	netstat/devproc.h \
