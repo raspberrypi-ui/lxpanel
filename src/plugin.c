@@ -906,3 +906,9 @@ void popup_at_button (LXPanel *panel, GtkWidget *window, GtkWidget *button, gpoi
     g_signal_connect (G_OBJECT (window), "map-event", G_CALLBACK (popup_mapped), plugin);
     g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (popup_button_press), plugin);
 }
+
+gboolean is_pi (void)
+{
+    if (!access ("/boot/firmware/config.txt", R_OK)) return TRUE;
+    return FALSE;
+}

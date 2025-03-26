@@ -417,6 +417,8 @@ extern void graph_free (PluginGraph *graph);
 
 extern void popup_at_button (LXPanel *panel, GtkWidget *window, GtkWidget *button, gpointer plugin);
 
+extern gboolean is_pi (void);
+
 #define wrap_new_menu_item(plugin,text,maxlen,icon) lxpanel_plugin_new_menu_item(plugin->panel,text,maxlen,icon)
 #define wrap_set_menu_icon(plugin,image,icon) lxpanel_plugin_set_menu_icon(plugin->panel,image,icon)
 #define wrap_set_taskbar_icon(plugin,image,icon) lxpanel_plugin_set_taskbar_icon(plugin->panel,image,icon)
